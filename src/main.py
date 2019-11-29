@@ -56,7 +56,7 @@ if __name__ == "__main__":
     )
     run_id = datetime.utcnow().isoformat()
     kill_list = kill_long_running(
-        os.getenv('MYSSK_TIME_THRESHOLD') or 200, conn_details)
+        int(os.getenv('MYSSK_TIME_THRESHOLD')) or 200, conn_details)
     tbl = tabulate(kill_list, headers='keys')
     print(run_id + '\n' + tbl)
     if not os.path.exists('./runlogs'):
