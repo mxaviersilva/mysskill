@@ -60,7 +60,11 @@ if __name__ == "__main__":
     tbl = tabulate(kill_list, headers='keys')
     print(run_id + '\n' + tbl)
     if not os.path.exists('./runlogs'):
-        os.mkdir('./runlogs')
+        try:
+            os.mkdir('./runlogs')
+        except os.error as e:
+            print(e)
+            exit(1)
     os.chdir('./runlogs')
     with open(f'{run_id}.txt', 'w+') as f:
         f.write(run_id + '\n' + tbl)
