@@ -2,9 +2,17 @@ import os
 import pymysql.cursors
 from pymysql.err import MySQLError
 import sys
+from tabulate import tabulate
+from datetime import datetime
 
 
-def kill_long_running(threshold: int, conn_details: tuple):
+def kill_long_running(threshold: int, conn_details: tuple) -> tuple:
+    """
+    kills any sleeping connections older than the threshold
+        :param threshold:int: the threshold for killing connections
+        :param conn_details:tuple: a tuple in the structure of host, user, password, schema and charset (optional)
+        :return tuple: a tuple containing the killed connections
+    """
     try:
         con = pymysql.connect(
             host=conn_details[0],
@@ -17,21 +25,21 @@ def kill_long_running(threshold: int, conn_details: tuple):
     except MySQLError as e:
         print(e)
         return
-    
+
+    kill_list = []
     with con.cursor() as cur:
         sql = 'SHOW FULL PROCESSLIST;'
         cur.execute(sql)
-        res = cur.fetchall()
-        c = 0
-        for r in res:
-            if r['Command'] == 'Sleep' and r['Time'] >= threshold:
-                print(f'killing {r["Id"]}')
-                sql = f'KILL {r["Id"]};'
+        proclist = cur.fetchall()
+        for proc in proclist:
+            if proc['Command'] == 'Sleep' and proc['Time'] >= threshold:
+                kill_list.append(
+                    {'id': proc['Id'], 'host': proc['Host'], 'user': proc['User'], 'time': proc['Time']})
+                sql = f'KILL {proc["Id"]};'
                 cur.execute(sql)
-                c += 1
-        print(f'killed {c} processes')
 
     con.close()
+    return tuple(kill_list if len(kill_list) > 0 else [{'message': 'no kills'}])
 
 
 if __name__ == "__main__":
@@ -46,5 +54,13 @@ if __name__ == "__main__":
         os.getenv('DB_SCHEMA'),
         os.getenv('DB_CHARSET')
     )
-
-    kill_long_running(os.getenv('MYSSK_TIME_THRESHOLD') or 200, conn_details)
+    run_id = datetime.utcnow().isoformat()
+    kill_list = kill_long_running(
+        os.getenv('MYSSK_TIME_THRESHOLD') or 200, conn_details)
+    tbl = tabulate(kill_list, headers='keys')
+    print(run_id + '\n' + tbl)
+    if not os.path.exists('./runlogs'):
+        os.mkdir('./runlogs')
+    os.chdir('./runlogs')
+    with open(f'{run_id}.txt', 'w+') as f:
+        f.write(run_id + '\n' + tbl)
