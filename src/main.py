@@ -4,6 +4,7 @@ from pymysql.err import MySQLError
 import sys
 from tabulate import tabulate
 from datetime import datetime
+import json
 
 
 def kill_long_running(threshold: int, conn_details: tuple) -> tuple:
@@ -70,3 +71,6 @@ if __name__ == "__main__":
         exit()
     with open(f'{run_id}.txt', 'w+', encoding='utf-8') as f:
         f.write(run_id + '\n' + tbl)
+    
+    with open(f'{run_id}.json', 'w+', encoding='utf-8') as f:
+        json.dump(kill_list, f)
