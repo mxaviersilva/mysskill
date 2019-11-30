@@ -68,5 +68,5 @@ if __name__ == "__main__":
     os.chdir('./runlogs')
     if kill_list[0] == 'error':
         exit()
-    with open(f'{run_id}.txt', 'w+') as f:
+    with open(f'{run_id}.txt', 'w+', encoding='utf-8') as f:
         f.write(run_id + '\n' + tbl)
