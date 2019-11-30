@@ -24,7 +24,7 @@ def kill_long_running(threshold: int, conn_details: tuple) -> tuple:
         )
     except MySQLError as e:
         print(e)
-        return
+        return tuple('error')
 
     kill_list = []
     with con.cursor() as cur:
@@ -66,5 +66,7 @@ if __name__ == "__main__":
             print(e)
             exit(1)
     os.chdir('./runlogs')
+    if kill_list[0] == 'error':
+        exit()
     with open(f'{run_id}.txt', 'w+') as f:
         f.write(run_id + '\n' + tbl)
